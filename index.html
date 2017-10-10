@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8" />
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+
+
+<meta name="author" content="Yoan Bidart" />
+
+<meta name="date" content="2017-10-10" />
+
+<title>Exploring the BRFSS data</title>
+
+<script src="index_files/jquery-1.11.3/jquery.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="index_files/bootstrap-3.3.5/css/spacelab.min.css" rel="stylesheet" />
+<script src="index_files/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="index_files/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="index_files/bootstrap-3.3.5/shim/respond.min.js"></script>
+<script src="index_files/navigation-1.1/tabsets.js"></script>
+
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+div.sourceCode { overflow-x: auto; }
+table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
+  margin: 0; padding: 0; vertical-align: baseline; border: none; }
+table.sourceCode { width: 100%; line-height: 100%; }
+td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
+td.sourceCode { padding-left: 5px; }
+code > span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code > span.dt { color: #902000; } /* DataType */
+code > span.dv { color: #40a070; } /* DecVal */
+code > span.bn { color: #40a070; } /* BaseN */
+code > span.fl { color: #40a070; } /* Float */
+code > span.ch { color: #4070a0; } /* Char */
+code > span.st { color: #4070a0; } /* String */
+code > span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code > span.ot { color: #007020; } /* Other */
+code > span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code > span.fu { color: #06287e; } /* Function */
+code > span.er { color: #ff0000; font-weight: bold; } /* Error */
+code > span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+code > span.cn { color: #880000; } /* Constant */
+code > span.sc { color: #4070a0; } /* SpecialChar */
+code > span.vs { color: #4070a0; } /* VerbatimString */
+code > span.ss { color: #bb6688; } /* SpecialString */
+code > span.im { } /* Import */
+code > span.va { color: #19177c; } /* Variable */
+code > span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code > span.op { color: #666666; } /* Operator */
+code > span.bu { } /* BuiltIn */
+code > span.ex { } /* Extension */
+code > span.pp { color: #bc7a00; } /* Preprocessor */
+code > span.at { color: #7d9029; } /* Attribute */
+code > span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code > span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code > span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+</style>
+<style type="text/css">
+  pre:not([class]) {
+    background-color: white;
+  }
+</style>
+
+
+<style type="text/css">
+h1 {
+  font-size: 34px;
+}
+h1.title {
+  font-size: 38px;
+}
+h2 {
+  font-size: 30px;
+}
+h3 {
+  font-size: 24px;
+}
+h4 {
+  font-size: 18px;
+}
+h5 {
+  font-size: 16px;
+}
+h6 {
+  font-size: 12px;
+}
+.table th:not([align]) {
+  text-align: left;
+}
+</style>
+
+
+</head>
+
+<body>
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+code {
+  color: inherit;
+  background-color: rgba(0, 0, 0, 0.04);
+}
+img {
+  max-width:100%;
+  height: auto;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+</style>
+
+
+
+<div class="container-fluid main-container">
+
+<!-- tabsets -->
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+</script>
+
+<!-- code folding -->
+
+
+
+
+
+
+<div class="fluid-row" id="header">
+
+
+
+<h1 class="title toc-ignore">Exploring the BRFSS data</h1>
+<h4 class="author"><em>Yoan Bidart</em></h4>
+<h4 class="date"><em>10/10/2017</em></h4>
+
+</div>
+
+
+<div id="setup" class="section level2">
+<h2>Setup</h2>
+<div id="load-packages" class="section level3">
+<h3>Load packages</h3>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(ggplot2)
+<span class="kw">library</span>(dplyr)</code></pre></div>
+<pre><code>## Warning: package &#39;dplyr&#39; was built under R version 3.4.2</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">require</span>(googleVis)
+op &lt;-<span class="st"> </span><span class="kw">options</span>(<span class="dt">gvis.plot.tag=</span><span class="st">&#39;chart&#39;</span>)</code></pre></div>
+</div>
+<div id="load-data" class="section level3">
+<h3>Load data</h3>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">load</span>(<span class="st">&quot;brfss2013.RData&quot;</span>)
+data &lt;-<span class="st"> </span>brfss2013</code></pre></div>
+<hr />
+</div>
+</div>
+<div id="part-1-data" class="section level2">
+<h2>Part 1: Data</h2>
+<p>As our data is collected among 50 states of the United States of America (since 2001), we can generalize to the general American population. We can discuss about the differences that can be observated with other populations, like rate of smokers or obesity which can differ on a developping country for example. Note that our sample have observations from 2013 to 2014 so we can’t explore long time variation of the different variables.</p>
+<p>Also the telephonic interviews can not be assumed like a randomisation, so conducting a randomised study about this theme may improve the quality of evidences, but it may be hard to do in reality.</p>
+<hr />
+</div>
+<div id="part-2-research-questions" class="section level2">
+<h2>Part 2: Research questions</h2>
+<p><strong>Effect of the obesity on people feelings about their general health:</strong></p>
+<p><strong>Observation of the BMI versus physical activity, and distribution of heart attack in the population:</strong></p>
+<p><strong>Mapping of binge drinking versus average alcoholic drinks:</strong></p>
+<hr />
+</div>
+<div id="part-3-exploratory-data-analysis" class="section level2">
+<h2>Part 3: Exploratory data analysis</h2>
+<p><strong>Effect of the obesity on people feelings about their general health:</strong></p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">data1 &lt;-<span class="st"> </span>data <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">        </span><span class="kw">filter</span>(<span class="op">!</span><span class="kw">is.na</span>(X_bmi5cat)) <span class="op">%&gt;%</span>
+<span class="st">        </span><span class="kw">filter</span>(<span class="op">!</span><span class="kw">is.na</span>(genhlth))
+<span class="kw">qplot</span>(genhlth, <span class="dt">fill=</span><span class="kw">factor</span>(X_bmi5cat), <span class="dt">data=</span>data1, <span class="dt">main=</span><span class="st">&quot;General health histgram, by BMI categories&quot;</span>)</code></pre></div>
+<p><img src="index_files/figure-html/unnamed-chunk-1-1.png" width="672" /></p>
+<p>The genhlth factor was a question asked to people how good do their health feel. It seems that obese people feel slightly well. The peak is at good instead of very good.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">data1 &lt;-<span class="st"> </span><span class="kw">filter</span>(data1, <span class="kw">as.numeric</span>(X_bmi5cat) <span class="op">==</span><span class="st"> </span><span class="dv">4</span>)
+hlth &lt;-<span class="st"> </span><span class="kw">summary</span>(data1<span class="op">$</span>genhlth)
+<span class="kw">print</span>(hlth)</code></pre></div>
+<pre><code>## Excellent Very good      Good      Fair      Poor 
+##     10654     36022     49804     26741     11065</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">sum</span>(<span class="kw">as.numeric</span>(hlth)[<span class="dv">1</span><span class="op">:</span><span class="dv">3</span>])<span class="op">/</span><span class="kw">sum</span>(<span class="kw">as.numeric</span>(hlth))</code></pre></div>
+<pre><code>## [1] 0.7184666</code></pre>
+<p>We can also note that 71.8% of obese people feel their general health is Good, Very Good or Excellent.</p>
+<p><strong>Observation of the BMI versus physical activity, and distribution of heart attack in the population:</strong></p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co">#correct the 2 decimal implied</span>
+data2 &lt;-<span class="st"> </span><span class="kw">mutate</span>(data, <span class="dt">bmi =</span> (wtkg3<span class="op">/</span><span class="dv">100</span>)<span class="op">/</span>(htm4<span class="op">/</span><span class="dv">100</span>)<span class="op">^</span><span class="dv">2</span>)
+<span class="kw">qplot</span>(<span class="dt">x=</span>bmi, <span class="dt">y=</span>pa1min_, <span class="dt">data=</span>data2, <span class="dt">xlim=</span><span class="kw">c</span>(<span class="dv">0</span>,<span class="dv">100</span>), <span class="dt">ylim=</span><span class="kw">c</span>(<span class="dv">0</span>,<span class="dv">5000</span>), 
+      <span class="dt">color=</span><span class="kw">factor</span>(cvdinfr4), <span class="dt">main=</span><span class="st">&quot;Physical activity and BMI, with heart attack factor&quot;</span>, <span class="dt">ylab=</span><span class="st">&quot;Physical activity (min per week)&quot;</span>)</code></pre></div>
+<pre><code>## Warning: Removed 179817 rows containing missing values (geom_point).</code></pre>
+<p><img src="index_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
+<p>We can observe a decrease of the physical activity starting around a BMI of 35, and the heart attack survivors seems equally distributed.</p>
+<p><strong>Mapping of binge drinking versus average alcoholic drinks:</strong></p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">data3 &lt;-<span class="st"> </span>data <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">        </span><span class="kw">select</span>(X_state, drnk3ge5, avedrnk2) <span class="op">%&gt;%</span>
+<span class="st">        </span><span class="kw">group_by</span>(X_state) <span class="op">%&gt;%</span>
+<span class="st">        </span><span class="kw">summarize</span>(<span class="kw">mean</span>(drnk3ge5, <span class="dt">na.rm=</span><span class="ot">TRUE</span>), <span class="kw">mean</span>(avedrnk2, <span class="dt">na.rm=</span><span class="ot">TRUE</span>))
+<span class="kw">names</span>(data3) &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="st">&quot;state&quot;</span>, <span class="st">&quot;drink_ave&quot;</span>, <span class="st">&quot;binge&quot;</span>)
+data3 &lt;-<span class="st"> </span>data3[<span class="kw">order</span>(data3<span class="op">$</span>drink_ave, <span class="dt">decreasing=</span><span class="ot">TRUE</span>),]
+data3<span class="op">$</span>state &lt;-<span class="st"> </span><span class="kw">ordered</span>(data3<span class="op">$</span>state)
+
+data4 &lt;-<span class="st"> </span>data3[<span class="kw">order</span>(data3<span class="op">$</span>binge, <span class="dt">decreasing=</span><span class="ot">TRUE</span>),]
+<span class="kw">table</span>(data3<span class="op">$</span>state[<span class="dv">1</span><span class="op">:</span><span class="dv">10</span>] <span class="op">%in%</span><span class="st"> </span>data4<span class="op">$</span>state[<span class="dv">1</span><span class="op">:</span><span class="dv">10</span>])</code></pre></div>
+<pre><code>## 
+## FALSE  TRUE 
+##     2     8</code></pre>
+<p>We can see that 8 out of 10 states on our top tens (for binge and average drinking) are the same.</p>
+<p>Here is our top five for both :</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co">#Top five for average drinking</span>
+data3[<span class="dv">1</span><span class="op">:</span><span class="dv">5</span>,<span class="dv">1</span><span class="op">:</span><span class="dv">2</span>]</code></pre></div>
+<pre><code>## # A tibble: 5 x 2
+##           state drink_ave
+##           &lt;ord&gt;     &lt;dbl&gt;
+## 1          Guam  2.192837
+## 2   Puerto Rico  1.624349
+## 3          Utah  1.596931
+## 4        Hawaii  1.589777
+## 5 West Virginia  1.499725</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co">#Top five for binge drinking</span>
+data4[<span class="dv">1</span><span class="op">:</span><span class="dv">5</span>, <span class="kw">c</span>(<span class="dv">1</span>,<span class="dv">3</span>)]</code></pre></div>
+<pre><code>## # A tibble: 5 x 2
+##           state    binge
+##           &lt;ord&gt;    &lt;dbl&gt;
+## 1   Puerto Rico 4.657199
+## 2          Guam 3.710598
+## 3        Hawaii 2.705577
+## 4          Utah 2.623815
+## 5 West Virginia 2.500000</code></pre>
+<p>The same 5 states are leaders in average and binge drinking.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">g1 &lt;-<span class="st"> </span><span class="kw">gvisGeoChart</span>(data3, <span class="dt">locationvar=</span><span class="st">&quot;state&quot;</span>, <span class="dt">colorvar=</span><span class="st">&quot;binge&quot;</span>, <span class="dt">options=</span><span class="kw">list</span>(<span class="dt">region=</span><span class="st">&quot;US&quot;</span>, <span class="dt">displayMode=</span><span class="st">&quot;regions&quot;</span>, <span class="dt">resolution=</span><span class="st">&quot;provinces&quot;</span>, <span class="dt">title=</span><span class="st">&quot;Binge drinking in the US&quot;</span>))
+g2 &lt;-<span class="st"> </span><span class="kw">gvisGeoChart</span>(data4, <span class="dt">locationvar=</span><span class="st">&quot;state&quot;</span>, <span class="dt">colorvar=</span><span class="st">&quot;drink_ave&quot;</span>, <span class="dt">options=</span><span class="kw">list</span>(<span class="dt">region=</span><span class="st">&quot;US&quot;</span>, <span class="dt">displayMode=</span><span class="st">&quot;regions&quot;</span>, <span class="dt">resolution=</span><span class="st">&quot;provinces&quot;</span>, <span class="dt">title=</span><span class="st">&quot;Average drinking in the US&quot;</span>))
+<span class="kw">plot</span>(<span class="kw">gvisMerge</span>(g1, g2))</code></pre></div>
+<!-- GeoChart generated in R 3.4.0 by googleVis 0.6.2 package -->
+<!-- Tue Oct 10 18:40:24 2017 -->
+<!-- jsHeader -->
+<script type="text/javascript">
+ 
+// jsData 
+function gvisDataGeoChartID7a67f46c21c () {
+var data = new google.visualization.DataTable();
+var datajson =
+[
+ [
+"Guam",
+3.710597826
+],
+[
+"Puerto Rico",
+4.657199472
+],
+[
+"Utah",
+2.623815166
+],
+[
+"Hawaii",
+2.705577173
+],
+[
+"West Virginia",
+2.5
+],
+[
+"Kentucky",
+2.453189464
+],
+[
+"Wisconsin",
+2.439401889
+],
+[
+"Alaska",
+2.361480865
+],
+[
+"Mississippi",
+2.489054495
+],
+[
+"Illinois",
+2.349899933
+],
+[
+"Iowa",
+2.222007722
+],
+[
+"Montana",
+2.360375911
+],
+[
+"Ohio",
+2.303620156
+],
+[
+"Michigan",
+2.298108849
+],
+[
+"North Dakota",
+2.490892322
+],
+[
+"Nevada",
+2.232430454
+],
+[
+"Florida",
+2.183140518
+],
+[
+"Texas",
+2.420439845
+],
+[
+"Arkansas",
+2.326555024
+],
+[
+"New Mexico",
+2.296577017
+],
+[
+"Indiana",
+2.243758511
+],
+[
+"Missouri",
+2.261521972
+],
+[
+"Pennsylvania",
+2.266023924
+],
+[
+"Idaho",
+2.078870901
+],
+[
+"Georgia",
+2.137971014
+],
+[
+"Nebraska",
+2.200523799
+],
+[
+"South Dakota",
+2.238560268
+],
+[
+"South Carolina",
+2.164509761
+],
+[
+"Louisiana",
+2.160412758
+],
+[
+"Arizona",
+2.134936212
+],
+[
+"North Carolina",
+2.192643955
+],
+[
+"Kansas",
+2.132259549
+],
+[
+"Minnesota",
+2.115114647
+],
+[
+"Oklahoma",
+2.248043552
+],
+[
+"Virginia",
+2.162471966
+],
+[
+"Massachusetts",
+2.094237695
+],
+[
+"Maine",
+2.001987633
+],
+[
+"New York",
+2.144199957
+],
+[
+"California",
+2.137192982
+],
+[
+"Delaware",
+2.24251497
+],
+[
+"Oregon",
+2.002052786
+],
+[
+"Washington",
+1.960592686
+],
+[
+"Wyoming",
+1.961744966
+],
+[
+"Colorado",
+1.940411413
+],
+[
+"New Jersey",
+2.231636864
+],
+[
+"Alabama",
+2.281460134
+],
+[
+"New Hampshire",
+1.934140163
+],
+[
+"Connecticut",
+1.963477482
+],
+[
+"Rhode Island",
+2.049406048
+],
+[
+"Maryland",
+2.014880952
+],
+[
+"Vermont",
+1.875727129
+],
+[
+"District of Columbia",
+1.812811388
+],
+[
+"Tennessee",
+2.057142857
+],
+[
+"0",
+null
+],
+[
+"80",
+null
+] 
+];
+data.addColumn('string','state');
+data.addColumn('number','binge');
+data.addRows(datajson);
+return(data);
+}
+
+
+// jsData 
+function gvisDataGeoChartID7a67e71fd8b () {
+var data = new google.visualization.DataTable();
+var datajson =
+[
+ [
+"Puerto Rico",
+1.624348958
+],
+[
+"Guam",
+2.192837466
+],
+[
+"Hawaii",
+1.589776855
+],
+[
+"Utah",
+1.596931248
+],
+[
+"West Virginia",
+1.499724821
+],
+[
+"North Dakota",
+1.229243542
+],
+[
+"Mississippi",
+1.346189591
+],
+[
+"Kentucky",
+1.471608833
+],
+[
+"Wisconsin",
+1.398425197
+],
+[
+"Texas",
+1.166952422
+],
+[
+"Alaska",
+1.365152147
+],
+[
+"Montana",
+1.256375839
+],
+[
+"Illinois",
+1.312729703
+],
+[
+"Arkansas",
+1.164259928
+],
+[
+"Ohio",
+1.245833333
+],
+[
+"Michigan",
+1.232584917
+],
+[
+"New Mexico",
+1.161757486
+],
+[
+"Alabama",
+0.905950096
+],
+[
+"Pennsylvania",
+1.129107143
+],
+[
+"Missouri",
+1.141887062
+],
+[
+"Oklahoma",
+1.009907755
+],
+[
+"Indiana",
+1.147896879
+],
+[
+"Delaware",
+0.9648860665
+],
+[
+"South Dakota",
+1.109963718
+],
+[
+"Nevada",
+1.217934583
+],
+[
+"New Jersey",
+0.9150290617
+],
+[
+"Iowa",
+1.276318959
+],
+[
+"Nebraska",
+1.117003079
+],
+[
+"North Carolina",
+1.028820174
+],
+[
+"Florida",
+1.183575532
+],
+[
+"South Carolina",
+1.097255763
+],
+[
+"Virginia",
+1.009663033
+],
+[
+"Louisiana",
+1.050609185
+],
+[
+"New York",
+0.977461195
+],
+[
+"Georgia",
+1.125251944
+],
+[
+"California",
+0.9769771529
+],
+[
+"Arizona",
+1.03949293
+],
+[
+"Kansas",
+1.0151279
+],
+[
+"Minnesota",
+1.011797687
+],
+[
+"Massachusetts",
+1.001443696
+],
+[
+"Idaho",
+1.128547579
+],
+[
+"Tennessee",
+0.6822541966
+],
+[
+"Rhode Island",
+0.8642241379
+],
+[
+"Maryland",
+0.8577025545
+],
+[
+"Oregon",
+0.9598828697
+],
+[
+"Maine",
+0.9991124917
+],
+[
+"Connecticut",
+0.8684857974
+],
+[
+"Wyoming",
+0.9376257545
+],
+[
+"Washington",
+0.9581892487
+],
+[
+"Colorado",
+0.9355652983
+],
+[
+"New Hampshire",
+0.8976823064
+],
+[
+"Vermont",
+0.8264091029
+],
+[
+"District of Columbia",
+0.8141843972
+],
+[
+"0",
+null
+],
+[
+"80",
+null
+] 
+];
+data.addColumn('string','state');
+data.addColumn('number','drink_ave');
+data.addRows(datajson);
+return(data);
+}
+ 
+// jsDrawChart
+function drawChartGeoChartID7a67f46c21c() {
+var data = gvisDataGeoChartID7a67f46c21c();
+var options = {};
+options["width"] = 556;
+options["height"] = 347;
+options["region"] = "US";
+options["displayMode"] = "regions";
+options["resolution"] = "provinces";
+options["title"] = "Binge drinking in the US";
+
+    var chart = new google.visualization.GeoChart(
+    document.getElementById('GeoChartID7a67f46c21c')
+    );
+    chart.draw(data,options);
+    
+
+}
+  
+
+
+// jsDrawChart
+function drawChartGeoChartID7a67e71fd8b() {
+var data = gvisDataGeoChartID7a67e71fd8b();
+var options = {};
+options["width"] = 556;
+options["height"] = 347;
+options["region"] = "US";
+options["displayMode"] = "regions";
+options["resolution"] = "provinces";
+options["title"] = "Average drinking in the US";
+
+    var chart = new google.visualization.GeoChart(
+    document.getElementById('GeoChartID7a67e71fd8b')
+    );
+    chart.draw(data,options);
+    
+
+}
+  
+ 
+// jsDisplayChart
+(function() {
+var pkgs = window.__gvisPackages = window.__gvisPackages || [];
+var callbacks = window.__gvisCallbacks = window.__gvisCallbacks || [];
+var chartid = "geochart";
+  
+// Manually see if chartid is in pkgs (not all browsers support Array.indexOf)
+var i, newPackage = true;
+for (i = 0; newPackage && i < pkgs.length; i++) {
+if (pkgs[i] === chartid)
+newPackage = false;
+}
+if (newPackage)
+  pkgs.push(chartid);
+  
+// Add the drawChart function to the global list of callbacks
+callbacks.push(drawChartGeoChartID7a67f46c21c);
+})();
+function displayChartGeoChartID7a67f46c21c() {
+  var pkgs = window.__gvisPackages = window.__gvisPackages || [];
+  var callbacks = window.__gvisCallbacks = window.__gvisCallbacks || [];
+  window.clearTimeout(window.__gvisLoad);
+  // The timeout is set to 100 because otherwise the container div we are
+  // targeting might not be part of the document yet
+  window.__gvisLoad = setTimeout(function() {
+  var pkgCount = pkgs.length;
+  google.load("visualization", "1", { packages:pkgs, callback: function() {
+  if (pkgCount != pkgs.length) {
+  // Race condition where another setTimeout call snuck in after us; if
+  // that call added a package, we must not shift its callback
+  return;
+}
+while (callbacks.length > 0)
+callbacks.shift()();
+} });
+}, 100);
+}
+
+
+// jsDisplayChart
+(function() {
+var pkgs = window.__gvisPackages = window.__gvisPackages || [];
+var callbacks = window.__gvisCallbacks = window.__gvisCallbacks || [];
+var chartid = "geochart";
+  
+// Manually see if chartid is in pkgs (not all browsers support Array.indexOf)
+var i, newPackage = true;
+for (i = 0; newPackage && i < pkgs.length; i++) {
+if (pkgs[i] === chartid)
+newPackage = false;
+}
+if (newPackage)
+  pkgs.push(chartid);
+  
+// Add the drawChart function to the global list of callbacks
+callbacks.push(drawChartGeoChartID7a67e71fd8b);
+})();
+function displayChartGeoChartID7a67e71fd8b() {
+  var pkgs = window.__gvisPackages = window.__gvisPackages || [];
+  var callbacks = window.__gvisCallbacks = window.__gvisCallbacks || [];
+  window.clearTimeout(window.__gvisLoad);
+  // The timeout is set to 100 because otherwise the container div we are
+  // targeting might not be part of the document yet
+  window.__gvisLoad = setTimeout(function() {
+  var pkgCount = pkgs.length;
+  google.load("visualization", "1", { packages:pkgs, callback: function() {
+  if (pkgCount != pkgs.length) {
+  // Race condition where another setTimeout call snuck in after us; if
+  // that call added a package, we must not shift its callback
+  return;
+}
+while (callbacks.length > 0)
+callbacks.shift()();
+} });
+}, 100);
+}
+ 
+// jsFooter
+</script>
+<!-- jsChart -->
+<script type="text/javascript" src="https://www.google.com/jsapi?callback=displayChartGeoChartID7a67f46c21c"></script>
+<!-- jsChart -->
+<script type="text/javascript" src="https://www.google.com/jsapi?callback=displayChartGeoChartID7a67e71fd8b"></script>
+<table border="0">
+<tr>
+<td>
+<!-- divChart -->
+<div id="GeoChartID7a67f46c21c" style="width: 556; height: 347;">
+
+</div>
+</td>
+</tr>
+<tr>
+<td>
+<!-- divChart -->
+<div id="GeoChartID7a67e71fd8b" style="width: 556; height: 347;">
+
+</div>
+</td>
+</tr>
+</table>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co">#First plot about Binge drinking and second for average drinking in the US</span></code></pre></div>
+<p>We can see that the two maps looks similar, and the states with most average drinking are also the states with most binge drinking.</p>
+</div>
+
+
+
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.header').parent('thead').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
